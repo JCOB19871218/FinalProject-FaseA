@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Professor Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 90%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        button { padding: 5px 10px; }
+    </style>
+</head>
+<body>
+<h2>Professor Dashboard</h2>
+<p id="statusMsg"></p>
+<table id="enrollmentsTable">
+    <tr>
+        <th>Student</th>
+        <th>Course</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
+</table>
+
+<script>
+    const token = localStorage.getItem("jwt");
+    if (!token) {
+        window.location.href = "/login.html";
+    }
+
+    async function loadEnrollments() {
+        try {
+            const res = await fetch("http://localhost:8080/professor/enrollments", {
+                headers: { "Authorization": "Bearer " + token }
+            });
+            if (!res.ok) throw new Error("Failed to fetch enrollments");
+            const enrollments = await res.json();
+
+            const table = document.getElementById("enrollmentsTable");
+            table.querySelectorAll("tr:not(:first-child)").forEach(tr => tr.remove());
+
+            enrollments.forEach(e => {
+                const row = table.insertRow();
+                row.insertCell(0).innerText = e.studentName;
+                row.insertCell(1).innerText = e.courseName;
+                row.insertCell(2).innerText = e.status;
+
+                const actionCell = row.insertCell(3);
+                if (e.status === "Pending") {
+                    const btn = document.createElement("button");
+                    btn.innerText = "Approve";
+                    btn.onclick = () => updateEnrollment(e.id, "Approved");
+                    actionCell.appendChild(btn);
+                } else {
+                    actionCell.innerText = "-";
+                }
+            });
+        } catch (err) {
+            document.getElementById("statusMsg").innerText = err.message;
+        }
+    }
+
+    async function updateEnrollment(enrollmentId, status) {
+        try {
+            const res = await fetch(`http://localhost:8080/professor/enrollments/${enrollmentId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+                body: JSON.stringify({ status })
+            });
+            if (!res.ok) throw new Error("Failed to update enrollment");
+            document.getElementById("statusMsg").innerText = "Enrollment updated!";
+            loadEnrollments();
+        } catch (err) {
+            document.getElementById("statusMsg").innerText = err.message;
+        }
+    }
+
+    loadEnrollments();
+</script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+</head>
+<body>
+
+<h2>Admin Dashboard</h2>
+<button onclick="logout()">Logout</button>
+
+<div style="margin: 20px 0;">
+    <input type="text" id="searchFirstName" placeholder="First Name">
+    <input type="text" id="searchLastName" placeholder="Last Name">
+    <select id="searchRole">
+        <option value="">All Roles</option>
+        <option value="STUDENT">STUDENT</option>
+        <option value="PROFESSOR">PROFESSOR</option>
+        <option value="ADMIN">ADMIN</option>
+    </select>
+    <select id="searchStatus">
+        <option value="">All Status</option>
+        <option value="PENDING">PENDING</option>
+        <option value="APPROVED">APPROVED</option>
+        <option value="REJECT">REJECT</option>
+    </select>
+    <button onclick="loadUsers()">Search</button>
+
+    <button onclick="window.location.href='/admin/add-course'">Add Course</button>
+    <button onclick="window.location.href='/admin/view-courses'">View All Courses</button>
+</div>
+
+<table border="1">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th>Approve</th>
+        <th>Reject</th>
+        <th>Update</th>
+    </tr>
+    </thead>
+    <tbody id="usersTableBody"></tbody>
+</table>
+
+<script>
+    async function loadUsers() {
+        try {
+            const res = await fetch("/api/admin/dashboard");
+
+            if (res.status === 401 || res.status === 403) {
+                window.location.href = "/login";
+                return;
+            }
+
+            const users = await res.json();
+            const tbody = document.getElementById("usersTableBody");
+            tbody.innerHTML = "";
+
+            users.forEach(user => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>${user.firstName || ""}</td>
+                    <td>${user.lastName || ""}</td>
+                    <td>${user.email || ""}</td>
+                    <td>${user.role}</td>
+                    <td>${user.status}</td>
+                    <td><button onclick="updateStatus(${user.id}, 'APPROVED')">Approve</button></td>
+                    <td><button onclick="updateStatus(${user.id}, 'REJECT')">Reject</button></td>
+                    <td><button onclick="redirectToUpdate(${user.id})">Update</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+        } catch (e) {
+            console.error(e);
+            window.location.href = "/login";
+        }
+    }
+
+    async function updateStatus(userId, status) {
+        try {
+            const res = await fetch(`/api/admin/update-status/${userId}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({status})
+            });
+
+            if (!res.ok) throw new Error();
+            loadUsers();
+
+        } catch {
+            alert("Error updating status");
+        }
+    }
+
+    function redirectToUpdate(userId) {
+        window.location.href = `/admin/update-user/${userId}`;
+    }
+
+    function logout() {
+        window.location.href = "/logout";
+    }
+
+    loadUsers();
+</script>
+
+</body>
+</html>

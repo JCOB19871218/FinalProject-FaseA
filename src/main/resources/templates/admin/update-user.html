@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Update User</title>
+</head>
+<body>
+
+<h2>Update User</h2>
+
+<form id="updateForm">
+    <input type="hidden" id="userId" value="">
+
+    <label>First Name:</label>
+    <input type="text" id="firstName" name="firstName"><br><br>
+
+    <label>Last Name:</label>
+    <input type="text" id="lastName" name="lastName"><br><br>
+
+    <label>Role:</label>
+    <select id="role" name="role">
+        <option value="STUDENT">STUDENT</option>
+        <option value="PROFESSOR">PROFESSOR</option>
+        <option value="ADMIN">ADMIN</option>
+    </select><br><br>
+
+    <label>Status:</label>
+    <select id="status" name="status">
+        <option value="PENDING">PENDING</option>
+        <option value="APPROVED">APPROVED</option>
+        <option value="REJECT">REJECT</option>
+    </select><br><br>
+
+    <button type="button" onclick="saveUser()">Save</button>
+    <button type="button" onclick="goBack()">Back</button>
+</form>
+
+<script>
+    const userId = window.location.pathname.split("/").pop();
+    document.getElementById("userId").value = userId;
+
+    async function loadUser() {
+        try {
+            const res = await fetch(`/api/admin/users/${userId}`);
+            if (!res.ok) throw new Error("Failed to load user");
+            const user = await res.json();
+
+            document.getElementById("firstName").value = user.firstName || "";
+            document.getElementById("lastName").value = user.lastName || "";
+            document.getElementById("role").value = user.role || "";
+            document.getElementById("status").value = user.status || "";
+        } catch (err) {
+            console.error(err);
+            alert("Error loading user: " + err.message);
+        }
+    }
+
+    async function saveUser() {
+        const payload = {
+            firstName: document.getElementById("firstName").value,
+            lastName: document.getElementById("lastName").value,
+            role: document.getElementById("role").value,
+            status: document.getElementById("status").value
+        };
+
+        try {
+            const res = await fetch(`/api/admin/update-user/${userId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) throw new Error("Failed to update user");
+            alert("User updated successfully!");
+            window.location.href = "/admin/dashboard";
+        } catch (err) {
+            console.error(err);
+            alert("Error updating user: " + err.message);
+        }
+    }
+
+    function goBack() {
+        window.location.href = "/admin/dashboard";
+    }
+
+    loadUser();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register User</title>
+</head>
+
+<body>
+
+<h2>Register New User</h2>
+
+<form id="registerForm">
+
+    <label for="username">Username:</label><br>
+    <input type="text" id="username" placeholder="Enter username"><br><br>
+
+    <label for="password">Password:</label><br>
+    <input type="password" id="password" placeholder="Enter password"><br><br>
+
+    <label for="firstName">First Name:</label><br>
+    <input type="text" id="firstName" placeholder="Enter first name"><br><br>
+
+    <label for="lastName">Last Name:</label><br>
+    <input type="text" id="lastName" placeholder="Enter last name"><br><br>
+
+    <label for="birthDate">Birth Date:</label><br>
+    <input type="date" id="birthDate"><br><br>
+
+    <label for="major">Major:</label><br>
+    <input type="text" id="major" placeholder="Enter major"><br><br>
+
+    <label for="average">Average:</label><br>
+    <input type="number" id="average" placeholder="Enter average"><br><br>
+
+    <label for="academicDegree">Academic Degree:</label><br>
+    <input type="text" id="academicDegree" placeholder="Enter academic degree"><br><br>
+
+    <label for="role">Role:</label><br>
+    <select id="role">
+        <option value="">Select Role</option>
+        <option value="STUDENT">Student</option>
+        <option value="PROFESSOR">Professor</option>
+    </select><br><br>
+
+    <input type="button" id="register" value="Register">
+
+    <br><br>
+    <div id="successMessage"></div>
+
+</form>
+
+<script>
+    document.getElementById("register").addEventListener("click", registerStaff);
+
+    function registerStaff() {
+
+        const staff = {
+            username: document.getElementById("username").value.trim(),
+            password: document.getElementById("password").value.trim(),
+            firstName: document.getElementById("firstName").value.trim(),
+            lastName: document.getElementById("lastName").value.trim(),
+            birthDate: document.getElementById("birthDate").value,
+            academicDegree: document.getElementById("academicDegree").value.trim(),
+            major: document.getElementById("major").value.trim(),
+            average: document.getElementById("average").value.trim(),
+            role: document.getElementById("role").value
+        };
+
+        fetch("/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(staff)
+        })
+            .then(async response => {
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(errText || "Registration failed");
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById("successMessage").textContent =
+                    "User successfully registered!";
+                document.getElementById("registerForm").reset();
+            })
+            .catch(err => {
+                document.getElementById("successMessage").textContent =
+                    err.message;
+            });
+    }
+</script>
+
+</body>
+</html>

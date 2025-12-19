@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>View All Courses</title>
+</head>
+<body>
+
+<h2>All Courses</h2>
+<button onclick="goBack()">Back to Dashboard</button>
+
+<table style="margin-top: 20px;">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Professor</th>
+        <th>Start Date</th>
+        <th>End Date</th>
+        <th>Actions</th>
+        <th>Manage Students</th>
+    </tr>
+    </thead>
+    <tbody id="coursesTableBody"></tbody>
+</table>
+
+<script>
+    async function loadCourses() {
+        try {
+            const res = await fetch("/api/admin/courses");
+            if (!res.ok) throw new Error("Failed to load courses");
+            const courses = await res.json();
+            const tbody = document.getElementById("coursesTableBody");
+            tbody.innerHTML = "";
+
+            courses.forEach(course => {
+                const professorName = course.professor
+                    ? course.professor.firstName + ' ' + course.professor.lastName
+                    : 'N/A';
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                <td>${course.id}</td>
+                <td>${course.title}</td>
+                <td>${professorName}</td>
+                <td>${course.startDate}</td>
+                <td>${course.endDate}</td>
+                <td>
+                    <button onclick="editCourse(${course.id})">Edit</button>
+                    <button onclick="deleteCourse(${course.id})">Delete</button>
+                    <button onclick="viewDetails(${course.id})">Details</button>
+                </td>
+                <td>
+                    <button onclick="addStudent(${course.id})">Add Student</button>
+                    <button onclick="removeStudent(${course.id})">Remove Student</button>
+                </td>
+            `;
+                tbody.appendChild(tr);
+            });
+
+        } catch (err) {
+            console.error(err);
+            alert("Error loading courses: " + err.message);
+        }
+    }
+
+    function goBack() {
+        window.location.href = "/admin/dashboard";
+    }
+
+    function editCourse(courseId) {
+        window.location.href = `/admin/detail-course/${courseId}`;
+    }
+
+    function viewDetails(courseId) {
+        window.location.href = `/admin/detail-course/${courseId}`;
+    }
+
+    async function deleteCourse(courseId) {
+        if (!confirm("Are you sure you want to delete this course?")) return;
+        try {
+            const res = await fetch(`/api/admin/delete-course/${courseId}`, { method: "DELETE" });
+            if (!res.ok) throw new Error("Failed to delete course");
+            alert("Course deleted successfully!");
+            loadCourses();
+        } catch (err) {
+            console.error(err);
+            alert("Error deleting course: " + err.message);
+        }
+    }
+
+    async function addStudent(courseId) {
+        const studentId = prompt("Enter the ID of the student to add:");
+        if (!studentId) return;
+
+        try {
+            const res = await fetch(`/api/admin/enrollments/add-student/${courseId}/students/${studentId}`, { method: "POST" });
+            if (!res.ok) throw new Error("Failed to add student");
+            alert("Student added successfully");
+            loadCourses(); // refresh table
+        } catch (err) {
+            console.error(err);
+            alert("Error adding student: " + err.message);
+        }
+    }
+
+    async function removeStudent(courseId) {
+        const studentId = prompt("Enter the ID of the student to remove:");
+        if (!studentId) return;
+
+        try {
+            const res = await fetch(`/api/admin/enrollments/delete-student/${courseId}/students/${studentId}`, { method: "DELETE" });
+            if (!res.ok) throw new Error("Failed to remove student");
+            alert("Student removed successfully");
+            loadCourses(); // refresh table
+        } catch (err) {
+            console.error(err);
+            alert("Error removing student: " + err.message);
+        }
+    }
+
+    loadCourses();
+</script>
+
+</body>
+</html>

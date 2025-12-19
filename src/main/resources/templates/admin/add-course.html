@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Course</title>
+</head>
+<body>
+
+<h2>Add Course</h2>
+
+<form id="addCourseForm">
+    <label>Course Title:</label>
+    <input type="text" id="courseTitle"><br><br>
+
+    <label>Start Date:</label>
+    <input type="date" id="startDate"><br><br>
+
+    <label>End Date:</label>
+    <input type="date" id="endDate"><br><br>
+
+    <label>Professor:</label>
+    <select id="professorSelect">
+        <option value="">-- Select Professor --</option>
+    </select><br><br>
+
+    <button type="button" onclick="addCourse()">Add Course</button>
+    <button type="button" onclick="goBack()">Back</button>
+</form>
+
+<script>
+    async function loadProfessors() {
+        try {
+            const res = await fetch("/api/admin/get-professors");
+            if (!res.ok) throw new Error("Failed to load professors");
+            const professors = await res.json();
+            const select = document.getElementById("professorSelect");
+            professors.forEach(prof => {
+                const option = document.createElement("option");
+                option.value = prof.id;
+                option.text = prof.firstName + " " + prof.lastName;
+                select.appendChild(option);
+            });
+        } catch (err) {
+            console.error(err);
+            alert("Error loading professors: " + err.message);
+        }
+    }
+
+    function goBack() {
+        window.location.href = "/admin/dashboard";
+    }
+
+    async function addCourse() {
+        const payload = {
+            title: document.getElementById("courseTitle").value,
+            startDate: document.getElementById("startDate").value,
+            endDate: document.getElementById("endDate").value,
+            professorId: document.getElementById("professorSelect").value
+        };
+
+        try {
+            const res = await fetch("/api/admin/create-courses", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) throw new Error("Failed to add course");
+            const course = await res.json();
+            alert("Course added successfully! ID: " + course.id);
+            goBack();
+        } catch (err) {
+            console.error(err);
+            alert("Error adding course: " + err.message);
+        }
+    }
+
+    loadProfessors();
+</script>
+
+</body>
+</html>

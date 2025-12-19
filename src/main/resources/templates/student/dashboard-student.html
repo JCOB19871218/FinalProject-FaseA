@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 80%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    </style>
+</head>
+<body>
+<h2>Student Dashboard</h2>
+<p id="statusMsg"></p>
+<table id="coursesTable">
+    <tr>
+        <th>Course ID</th>
+        <th>Course Name</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
+</table>
+
+<script>
+    const token = localStorage.getItem("jwt");
+    if (!token) {
+        window.location.href = "/login.html";
+    }
+
+    async function loadCourses() {
+        try {
+            const res = await fetch("http://localhost:8080/student/courses", {
+                headers: { "Authorization": "Bearer " + token }
+            });
+            if (!res.ok) throw new Error("Failed to fetch courses");
+            const courses = await res.json();
+
+            const table = document.getElementById("coursesTable");
+            table.querySelectorAll("tr:not(:first-child)").forEach(tr => tr.remove());
+
+            courses.forEach(c => {
+                const row = table.insertRow();
+                row.insertCell(0).innerText = c.id;
+                row.insertCell(1).innerText = c.name;
+                row.insertCell(2).innerText = c.status;
+                const actionCell = row.insertCell(3);
+
+                const btn = document.createElement("button");
+                btn.innerText = c.status === "Pending" ? "Request Enrollment" : "-";
+                btn.disabled = c.status !== "Pending";
+                btn.onclick = () => requestEnrollment(c.id);
+                actionCell.appendChild(btn);
+            });
+        } catch (err) {
+            document.getElementById("statusMsg").innerText = err.message;
+        }
+    }
+
+    async function requestEnrollment(courseId) {
+        try {
+            const res = await fetch(`http://localhost:8080/student/enroll/${courseId}`, {
+                method: "POST",
+                headers: { "Authorization": "Bearer " + token }
+            });
+            if (!res.ok) throw new Error("Failed to request enrollment");
+            document.getElementById("statusMsg").innerText = "Enrollment requested!";
+            loadCourses();
+        } catch (err) {
+            document.getElementById("statusMsg").innerText = err.message;
+        }
+    }
+
+    loadCourses();
+</script>
+</body>
+</html>

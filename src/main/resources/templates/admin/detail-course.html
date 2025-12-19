@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Course Details</title>
+</head>
+<body>
+
+<h2>Course Details</h2>
+
+<div id="courseInfo">
+    <p><strong>Title:</strong> <span id="courseTitle"></span></p>
+    <p><strong>Start Date:</strong> <span id="startDate"></span></p>
+    <p><strong>End Date:</strong> <span id="endDate"></span></p>
+    <p><strong>Professor:</strong>
+        <select id="professorSelect"></select>
+        <button onclick="updateProfessor()">Update Professor</button>
+    </p>
+    <button onclick="editCourse()">Edit Course Info</button>
+</div>
+
+<h3>Registered Students</h3>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
+    </thead>
+    <tbody id="studentsTable"></tbody>
+</table>
+
+<button onclick="goBack()">Back</button>
+
+<script>
+    const courseId = window.location.pathname.split("/").pop();
+    let courseData = null;
+    let professorsList = [];
+
+    function goBack() {
+        window.location.href = "/admin/view-courses";
+    }
+
+    async function loadCourseDetails() {
+        try {
+            const res = await fetch(`/api/admin/courses/${courseId}/details`);
+            if (!res.ok) throw new Error("Failed to load course details");
+
+            const data = await res.json();
+            courseData = data.course;
+            professorsList = data.allProfessors;
+
+            document.getElementById("courseTitle").innerText = courseData.title;
+            document.getElementById("startDate").innerText = courseData.startDate;
+            document.getElementById("endDate").innerText = courseData.endDate;
+
+            const select = document.getElementById("professorSelect");
+            select.innerHTML = "";
+            professorsList.forEach(prof => {
+                const option = document.createElement("option");
+                option.value = prof.id;
+                option.text = prof.firstName + " " + prof.lastName;
+                if(courseData.professor && courseData.professor.id === prof.id) option.selected = true;
+                select.appendChild(option);
+            });
+
+            const studentsRes = await fetch(`/api/admin/enrollments/get-student/${courseId}/students/requests`);
+            if (!studentsRes.ok) throw new Error("Failed to load students");
+            const students = await studentsRes.json();
+
+            const tbody = document.getElementById("studentsTable");
+            tbody.innerHTML = "";
+            students.forEach(student => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                <td>${student.id}</td>
+                <td>${student.firstName}</td>
+                <td>${student.lastName}</td>
+                <td>${student.status}</td>
+                <td><button onclick="removeStudent(${student.id})">Remove</button></td>
+            `;
+                tbody.appendChild(tr);
+            });
+
+        } catch (err) {
+            console.error(err);
+            alert("Error loading course details: " + err.message);
+        }
+    }
+
+    async function removeStudent(studentId) {
+        if (!confirm("Are you sure you want to remove this student?")) return;
+        try {
+            const res = await fetch(`/api/admin/enrollments/delete-student/${courseId}/students/${studentId}`, { method: "DELETE" });
+            if (!res.ok) throw new Error("Failed to remove student");
+            alert("Student removed successfully");
+            loadCourseDetails();
+        } catch (err) {
+            console.error(err);
+            alert("Error removing student: " + err.message);
+        }
+    }
+
+    async function updateProfessor() {
+        const professorId = document.getElementById("professorSelect").value;
+        try {
+            const res = await fetch(`/api/admin/enrollments/add-professor/${courseId}/professors/${professorId}`, { method: "POST" });
+            if (!res.ok) throw new Error("Failed to update professor");
+            alert("Professor updated successfully");
+            loadCourseDetails();
+        } catch (err) {
+            console.error(err);
+            alert("Error updating professor: " + err.message);
+        }
+    }
+
+    async function editCourse() {
+        const newTitle = prompt("Enter new title:", courseData.title);
+        const newStart = prompt("Enter new start date (YYYY-MM-DD):", courseData.startDate);
+        const newEnd = prompt("Enter new end date (YYYY-MM-DD):", courseData.endDate);
+        if (!newTitle || !newStart || !newEnd) return;
+
+        try {
+            const res = await fetch(`/api/admin/update-course/${courseId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title: newTitle, startDate: newStart, endDate: newEnd })
+            });
+            if (!res.ok) throw new Error("Failed to update course");
+            alert("Course updated successfully");
+            loadCourseDetails();
+        } catch (err) {
+            console.error(err);
+            alert("Error updating course: " + err.message);
+        }
+    }
+
+    loadCourseDetails();
+</script>
+
+</body>
+</html>
