@@ -1,6 +1,6 @@
-package com.example.demo.dto;
+package com.example.demo.dto.course;
 
-import com.example.demo.entity.User;
+import com.example.demo.dto.user.UserResponseDto;
 import lombok.*;
 
 import java.time.LocalDate;

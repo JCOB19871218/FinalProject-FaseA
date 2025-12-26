@@ -1,6 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.UserResponseDto;
+import com.example.demo.dto.user.UserResponseDto;
 import com.example.demo.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -40,7 +40,7 @@ public class PageController {
     }
 
     @GetMapping("/professor/dashboard")
-    public String teacherDashboard() {
+    public String professorDashboard() {
         return "professor/dashboard-professor";
     }
 
@@ -66,9 +66,18 @@ public class PageController {
     }
 
 
-
     @GetMapping("/admin/view-courses")
     public String viewAllCourse(){
         return "admin/view-all-course";
+    }
+
+    @GetMapping("/professor/createExample")
+    public String createExample(){
+    return "professor/createExample";
+    }
+
+    @GetMapping("/professor/createQuestion")
+    public String createQuestion(){
+        return "professor/createQuestion";
     }
 }

@@ -1,8 +1,8 @@
 package com.example.demo.mapper;
 
-import com.example.demo.dto.CourseRequestDto;
-import com.example.demo.dto.CourseResponseDto;
-import com.example.demo.dto.UserResponseDto;
+import com.example.demo.dto.course.CourseRequestDto;
+import com.example.demo.dto.course.CourseResponseDto;
+import com.example.demo.dto.user.UserResponseDto;
 import com.example.demo.entity.Course;
 import com.example.demo.entity.User;
 

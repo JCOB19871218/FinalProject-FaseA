@@ -9,27 +9,32 @@
 <h2>Admin Dashboard</h2>
 <button onclick="logout()">Logout</button>
 
+<!-- Search Section -->
 <div style="margin: 20px 0;">
     <input type="text" id="searchFirstName" placeholder="First Name">
     <input type="text" id="searchLastName" placeholder="Last Name">
+
     <select id="searchRole">
         <option value="">All Roles</option>
         <option value="STUDENT">STUDENT</option>
         <option value="PROFESSOR">PROFESSOR</option>
         <option value="ADMIN">ADMIN</option>
     </select>
+
     <select id="searchStatus">
         <option value="">All Status</option>
         <option value="PENDING">PENDING</option>
         <option value="APPROVED">APPROVED</option>
         <option value="REJECT">REJECT</option>
     </select>
-    <button onclick="loadUsers()">Search</button>
+
+    <button onclick="searchUsers()">Search</button>
 
     <button onclick="window.location.href='/admin/add-course'">Add Course</button>
     <button onclick="window.location.href='/admin/view-courses'">View All Courses</button>
 </div>
 
+<!-- Users Table -->
 <table border="1">
     <thead>
     <tr>
@@ -48,67 +53,98 @@
 </table>
 
 <script>
+    // Load all users initially
     async function loadUsers() {
         try {
             const res = await fetch("/api/admin/dashboard");
-
             if (res.status === 401 || res.status === 403) {
                 window.location.href = "/login";
                 return;
             }
-
             const users = await res.json();
-            const tbody = document.getElementById("usersTableBody");
-            tbody.innerHTML = "";
-
-            users.forEach(user => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${user.id}</td>
-                    <td>${user.firstName || ""}</td>
-                    <td>${user.lastName || ""}</td>
-                    <td>${user.email || ""}</td>
-                    <td>${user.role}</td>
-                    <td>${user.status}</td>
-                    <td><button onclick="updateStatus(${user.id}, 'APPROVED')">Approve</button></td>
-                    <td><button onclick="updateStatus(${user.id}, 'REJECT')">Reject</button></td>
-                    <td><button onclick="redirectToUpdate(${user.id})">Update</button></td>
-                `;
-                tbody.appendChild(tr);
-            });
-
+            renderUsers(users);
         } catch (e) {
             console.error(e);
             window.location.href = "/login";
         }
     }
 
+    // Search users with OR logic
+    async function searchUsers() {
+        try {
+            const firstName = document.getElementById("searchFirstName").value;
+            const lastName = document.getElementById("searchLastName").value;
+            const role = document.getElementById("searchRole").value;
+            const status = document.getElementById("searchStatus").value;
+
+            let url = "/api/admin/users/search?";
+            if (firstName) url += `firstName=${encodeURIComponent(firstName)}&`;
+            if (lastName) url += `lastName=${encodeURIComponent(lastName)}&`;
+            if (role) url += `role=${encodeURIComponent(role)}&`;
+            if (status) url += `status=${encodeURIComponent(status)}&`;
+
+            const res = await fetch(url);
+
+            if (!res.ok) throw new Error("Search failed");
+
+            const users = await res.json();
+            renderUsers(users);
+
+        } catch (e) {
+            alert("Error searching users");
+            console.error(e);
+        }
+    }
+
+    // Render users in table
+    function renderUsers(users) {
+        const tbody = document.getElementById("usersTableBody");
+        tbody.innerHTML = "";
+
+        users.forEach(user => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${user.id}</td>
+                <td>${user.firstName || ""}</td>
+                <td>${user.lastName || ""}</td>
+                <td>${user.email || ""}</td>
+                <td>${user.role}</td>
+                <td>${user.status}</td>
+                <td><button onclick="updateStatus(${user.id}, 'APPROVED')">Approve</button></td>
+                <td><button onclick="updateStatus(${user.id}, 'REJECT')">Reject</button></td>
+                <td><button onclick="redirectToUpdate(${user.id})">Update</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Update user status
     async function updateStatus(userId, status) {
         try {
             const res = await fetch(`/api/admin/update-status/${userId}`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({status})
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status })
             });
 
             if (!res.ok) throw new Error();
             loadUsers();
-
         } catch {
             alert("Error updating status");
         }
     }
 
+    // Redirect to update user page
     function redirectToUpdate(userId) {
         window.location.href = `/admin/update-user/${userId}`;
     }
 
+    // Logout
     function logout() {
         window.location.href = "/logout";
     }
 
+    // Initial load
     loadUsers();
 </script>
 

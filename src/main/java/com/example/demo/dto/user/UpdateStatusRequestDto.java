@@ -1,16 +1,18 @@
-package com.example.demo.dto;
+package com.example.demo.dto.user;
 
 import com.example.demo.entity.Role;
 import com.example.demo.entity.Status;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
-public class UserRegisterDto {
+@AllArgsConstructor
+@NoArgsConstructor
+public class UpdateStatusRequestDto {
     private String username;
-    private String password;
     private String firstName;
     private String lastName;
     private Role role;
+    private Status status;
+
 }

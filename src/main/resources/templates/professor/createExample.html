@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Exam & Manage Questions</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 90%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        button { padding: 5px 10px; margin: 2px; }
+        input, select { margin: 5px 0; padding: 5px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; width: 600px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+<h2>Professor Dashboard - Create Exam</h2>
+
+<div>
+    <h3>Create New Exam</h3>
+    <label>Course ID:</label>
+    <input type="number" id="courseId" placeholder="Course ID"><br>
+
+    <label>Exam Title:</label>
+    <input type="text" id="examTitle" placeholder="Exam Title"><br>
+
+    <label>Description:</label>
+    <input type="text" id="examDescription" placeholder="Description"><br>
+
+    <label>Duration (minutes):</label>
+    <input type="number" id="examDuration" placeholder="Duration"><br>
+
+    <label>Question Type:</label>
+    <select id="questionType">
+        <option value="MULTIPLE_CHOICE">Multiple Choice</option>
+        <option value="DESCRIPTIVE">Descriptive</option>
+    </select><br>
+
+    <button onclick="createExam()">Save Exam</button>
+    <button onclick="window.location.href='/professor/createQuestion'">Add Question to Bank</button>
+</div>
+
+<h3>Course Exams</h3>
+<table>
+    <thead>
+    <tr>
+        <th>Exam ID</th>
+        <th>Title</th>
+        <th>Description</th>
+        <th>Duration</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody id="examTable"></tbody>
+</table>
+
+<div id="questionModal" class="modal">
+    <div class="modal-content">
+        <h3>Select Questions from Bank</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Select</th>
+                <th>Title</th>
+                <th>Type</th>
+            </tr>
+            </thead>
+            <tbody id="bankQuestionsTable"></tbody>
+        </table>
+        <label>Default Score:</label>
+        <input type="number" id="defaultScore" value="1"><br><br>
+        <button onclick="addSelectedQuestions()">Add Selected Questions</button>
+        <button onclick="closeModal()">Cancel</button>
+    </div>
+</div>
+
+<script>
+    let selectedExamId = null;
+    let bankQuestions = [];
+
+    async function loadExams() {
+        const courseId = document.getElementById("courseId").value;
+        if (!courseId) return;
+
+        try {
+            const res = await fetch(`/api/professor/exams/course/${courseId}`);
+            const exams = await res.json();
+
+            const tbody = document.getElementById("examTable");
+            tbody.innerHTML = "";
+
+            exams.forEach(e => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${e.id}</td>
+                    <td>${e.title}</td>
+                    <td>${e.description || ""}</td>
+                    <td>${e.duration || ""}</td>
+                    <td>
+                        <button onclick="editExam(${e.id})">Edit</button>
+                        <button onclick="deleteExam(${e.id})">Delete</button>
+                        <button onclick="openQuestionModal(${e.id})">Add Question</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+        } catch (err) {
+            alert("Error loading exams: " + err.message);
+        }
+    }
+
+    async function createExam() {
+        const courseId = document.getElementById("courseId").value;
+        const title = document.getElementById("examTitle").value;
+        const description = document.getElementById("examDescription").value;
+        const duration = parseInt(document.getElementById("examDuration").value, 10);
+        const questionType = document.getElementById("questionType").value;
+
+        if (!courseId || !title || !duration) { alert("Fill all fields"); return; }
+
+        const dto = { title, description, duration, questionType };
+
+        const res = await fetch(`/api/professor/exams/course/${courseId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dto)
+        });
+
+        if (!res.ok) { alert(await res.text()); return; }
+        alert("Exam created successfully");
+        loadExams();
+    }
+
+    async function editExam(examId) {
+        const title = prompt("New title:");
+        const description = prompt("New description:");
+        const duration = prompt("New duration:");
+        if (!title || !description || !duration) return;
+
+        const dto = { title, description, duration: parseInt(duration, 10) };
+        const res = await fetch(`/api/professor/exams/${examId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dto)
+        });
+
+        if (!res.ok) { alert(await res.text()); return; }
+        loadExams();
+    }
+
+    async function deleteExam(examId) {
+        if (!confirm("Delete this exam?")) return;
+        const res = await fetch(`/api/professor/exams/${examId}`, { method: "DELETE" });
+        if (!res.ok) { alert(await res.text()); return; }
+        loadExams();
+    }
+
+    function openQuestionModal(examId) {
+        selectedExamId = examId;
+        loadBankQuestions();
+        document.getElementById("questionModal").style.display = "flex";
+    }
+
+    function closeModal() {
+        document.getElementById("questionModal").style.display = "none";
+    }
+
+    async function loadBankQuestions() {
+        const courseId = document.getElementById("courseId").value;
+        const res = await fetch(`/api/questions/bank?courseId=${courseId}`);
+        bankQuestions = await res.json();
+
+        const tbody = document.getElementById("bankQuestionsTable");
+        tbody.innerHTML = "";
+
+        bankQuestions.forEach(q => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><input type="checkbox" data-id="${q.id}"></td>
+                <td>${q.title}</td>
+                <td>${q.options && q.options.length ? "Multiple Choice" : "Descriptive"}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function addSelectedQuestions() {
+        const selectedIds = Array.from(document.querySelectorAll("#bankQuestionsTable input[type=checkbox]:checked"))
+            .map(i => i.dataset.id);
+
+        const score = parseInt(document.getElementById("defaultScore").value, 10);
+
+        for (const qId of selectedIds) {
+            await fetch(`/api/professor/exams/${selectedExamId}/questions/${qId}?score=${score}`, { method: "POST" });
+        }
+
+        alert("Questions added to exam");
+        closeModal();
+        loadExams();
+    }
+
+    document.getElementById("courseId").addEventListener("change", loadExams);
+</script>
+
+</body>
+</html>

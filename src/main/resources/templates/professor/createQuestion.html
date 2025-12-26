@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Question</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        label, input, textarea, select, button { margin: 5px 0; padding: 5px; display: block; }
+        .option { margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+        .option input { flex: 1; }
+        #optionsDiv { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<h2>Create Question</h2>
+
+<label>Course:</label>
+<select id="courseSelect"></select>
+
+<label>Question Type:</label>
+<select id="questionType" onchange="renderFields()">
+    <option value="MULTIPLE_CHOICE">Multiple Choice</option>
+    <option value="DESCRIPTIVE">Descriptive</option>
+</select>
+
+<div id="questionFields"></div>
+
+<button onclick="addQuestion()">Add Question</button>
+<button onclick="window.location.href='/professor/createExample'">Back to Exam</button>
+
+<script>
+    let optionCount = 0;
+    const MIN_OPTIONS = 2;
+
+    async function loadCourses() {
+        const res = await fetch('/api/professor/courses');
+        if (!res.ok) { alert("Failed to load courses"); return; }
+        const courses = await res.json();
+        const select = document.getElementById('courseSelect');
+        courses.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c.id;
+            option.textContent = c.title;
+            select.appendChild(option);
+        });
+    }
+
+    function renderFields() {
+        const type = document.getElementById('questionType').value;
+        const container = document.getElementById('questionFields');
+        container.innerHTML = '';
+
+        const titleLabel = document.createElement('label');
+        titleLabel.textContent = "Question Title:";
+        const titleInput = document.createElement('input');
+        titleInput.id = "questionText";
+        container.appendChild(titleLabel);
+        container.appendChild(titleInput);
+
+        if(type === 'MULTIPLE_CHOICE') {
+            const optionsDiv = document.createElement('div');
+            optionsDiv.id = 'optionsDiv';
+            container.appendChild(optionsDiv);
+
+            optionCount = 0;
+            addOption();
+            addOption();
+
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.textContent = "Add Option";
+            addBtn.onclick = addOption;
+            container.appendChild(addBtn);
+
+
+            const correctLabel = document.createElement('label');
+            correctLabel.textContent = "Correct Option:";
+            const correctSelect = document.createElement('select');
+            correctSelect.id = "correctOption";
+            container.appendChild(correctLabel);
+            container.appendChild(correctSelect);
+
+            updateCorrectOptionSelect();
+        } else if(type === 'DESCRIPTIVE') {
+            const textLabel = document.createElement('label');
+            textLabel.textContent = "Question Text:";
+            const textArea = document.createElement('textarea');
+            textArea.id = "descriptiveText";
+            textArea.rows = 4;
+            textArea.cols = 50;
+            container.appendChild(textLabel);
+            container.appendChild(textArea);
+        }
+    }
+
+    function addOption() {
+        optionCount++;
+        const optionsDiv = document.getElementById('optionsDiv');
+        const div = document.createElement('div');
+        div.className = 'option';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = `Option ${optionCount}`;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.textContent = "Remove";
+        removeBtn.onclick = () => {
+            if(optionsDiv.children.length <= MIN_OPTIONS) {
+                alert("At least 2 options required");
+                return;
+            }
+            div.remove();
+            updateCorrectOptionSelect();
+        };
+
+        div.appendChild(input);
+        div.appendChild(removeBtn);
+        optionsDiv.appendChild(div);
+
+        updateCorrectOptionSelect();
+    }
+
+    function updateCorrectOptionSelect() {
+        const select = document.getElementById('correctOption');
+        if(!select) return;
+        select.innerHTML = '';
+        const optionsDiv = document.getElementById('optionsDiv');
+        Array.from(optionsDiv.children).forEach((div, idx) => {
+            const option = document.createElement('option');
+            option.value = idx;
+            option.textContent = `Option ${idx+1}`;
+            select.appendChild(option);
+        });
+    }
+
+    async function addQuestion() {
+        const type = document.getElementById('questionType').value;
+        const courseId = document.getElementById('courseSelect').value;
+        const title = document.getElementById('questionText').value;
+
+        if(!title) { alert("Title required"); return; }
+
+        let dto = { title, courseId, type };
+
+        if(type === 'MULTIPLE_CHOICE') {
+            const optionsDiv = document.getElementById('optionsDiv');
+            const options = Array.from(optionsDiv.querySelectorAll('input')).map((input, idx) => ({
+                text: input.value,
+                correct: idx === parseInt(document.getElementById('correctOption').value)
+            }));
+            if(options.length < MIN_OPTIONS) { alert("At least 2 options required"); return; }
+            dto.options = options;
+        } else if(type === 'DESCRIPTIVE') {
+            const text = document.getElementById('descriptiveText').value;
+            if(!text) { alert("Question text required"); return; }
+            dto.questionText = text;
+        }
+
+        const res = await fetch('/api/questions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dto)
+        });
+
+        if(!res.ok) { alert(await res.text()); return; }
+        alert("Question added successfully");
+        renderFields();
+    }
+
+    loadCourses();
+    renderFields();
+</script>
+</body>
+</html>

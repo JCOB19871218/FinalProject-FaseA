@@ -1,12 +1,14 @@
 package com.example.demo.service.impl;
 
 
-import com.example.demo.dto.UserResponseDto;
+import com.example.demo.dto.user.UserResponseDto;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.Status;
 import com.example.demo.entity.User;
 import com.example.demo.mapper.UserMapper;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.search.UserSpecification;
+import org.springframework.data.jpa.domain.Specification;
 import com.example.demo.service.AdminService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +21,6 @@ import java.util.List;
 public class AdminServiceImpl implements AdminService {
 
     private final UserRepository userRepository;
-//    private final ElasticSearchRepository searchRepository;
 
 
     @Override
@@ -70,4 +71,30 @@ public class AdminServiceImpl implements AdminService {
                 new EntityNotFoundException("user not found"));
         return UserMapper.toDto(user);
     }
-}
+
+
+    @Override
+    public List<User> searchUsers(String firstName, String lastName, Role role, Status status) {
+        Specification<User> spec = null;
+
+        if (firstName != null && !firstName.isEmpty()) {
+            spec = UserSpecification.firstNameLike(firstName);
+        }
+
+        if (lastName != null && !lastName.isEmpty()) {
+            spec = spec == null ? UserSpecification.lastNameLike(lastName) : spec.or(UserSpecification.lastNameLike(lastName));
+        }
+
+        if (role != null) {
+            spec = spec == null ? UserSpecification.hasRole(role) : spec.or(UserSpecification.hasRole(role));
+        }
+
+        if (status != null) {
+            spec = spec == null ? UserSpecification.hasStatus(status) : spec.or(UserSpecification.hasStatus(status));
+        }
+
+        return spec == null ? userRepository.findAll() : userRepository.findAll(spec);
+    }
+
+    }
+

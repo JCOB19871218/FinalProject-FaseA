@@ -1,6 +1,6 @@
 //package com.example.demo.controller;
 //
-//import com.example.demo.dto.UserLoginRequestDto;
+//import com.example.demo.dto.user.UserLoginRequestDto;
 //import com.example.demo.security.CustomUserDetails;
 //import lombok.RequiredArgsConstructor;
 //import org.springframework.http.HttpStatus;

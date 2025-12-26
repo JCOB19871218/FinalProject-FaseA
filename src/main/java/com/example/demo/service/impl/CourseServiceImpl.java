@@ -1,9 +1,9 @@
 package com.example.demo.service.impl;
 
-import com.example.demo.dto.CourseDetailsDto;
-import com.example.demo.dto.CourseRequestDto;
-import com.example.demo.dto.CourseResponseDto;
-import com.example.demo.dto.UserResponseDto;
+import com.example.demo.dto.course.CourseDetailsDto;
+import com.example.demo.dto.course.CourseRequestDto;
+import com.example.demo.dto.course.CourseResponseDto;
+import com.example.demo.dto.user.UserResponseDto;
 import com.example.demo.entity.Course;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -142,6 +143,14 @@ public class CourseServiceImpl implements CourseService {
         Course course = courseRepository.findById(courseId).orElseThrow(() ->
                 new EntityNotFoundException("course not found"));
         return CourseMapper.toDto(course);
+    }
+
+    @Override
+    public List<CourseResponseDto> getCoursesByProfessor(Long id) {
+        List<Course> courses = courseRepository.findByProfessorId(id);
+        return courses.stream()
+                .map(CourseMapper::toDto)
+                .collect(Collectors.toList());
     }
 
 }

@@ -23,7 +23,10 @@ public class User implements Serializable {
     @GeneratedValue
     private Long id;
 
+    @Column(nullable = false, unique = true)
     private String username;
+
+    @Column(nullable = false)
     private String password;
 
     private String firstName;
@@ -31,8 +34,12 @@ public class User implements Serializable {
 
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Status status;
+
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+
     private Role role;
 
 

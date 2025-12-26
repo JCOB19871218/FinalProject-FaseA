@@ -1,12 +1,13 @@
 package com.example.demo.service.impl;
 
-import com.example.demo.dto.UserRegisterDto;
-import com.example.demo.dto.UserResponseDto;
+import com.example.demo.dto.user.UserRegisterDto;
+import com.example.demo.dto.user.UserResponseDto;
 import com.example.demo.entity.Status;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -38,5 +39,11 @@ public class UserServiceImpl implements UserService {
                 user.getLastName(),
                 user.getRole(),
                 user.getStatus());
+    }
+
+    @Override
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username).orElseThrow(()->
+                new UsernameNotFoundException("username not found"));
     }
 }

@@ -1,6 +1,9 @@
 package com.example.demo.service;
 
-import com.example.demo.dto.*;
+import com.example.demo.dto.course.CourseDetailsDto;
+import com.example.demo.dto.course.CourseRequestDto;
+import com.example.demo.dto.course.CourseResponseDto;
+import com.example.demo.dto.user.UserResponseDto;
 
 import java.util.List;
 
@@ -17,4 +20,5 @@ public interface CourseService {
     CourseResponseDto addStudent(Long courseId, Long studentId);
     CourseResponseDto removeStudent(Long courseId, Long studentId);
     CourseResponseDto findCourseById(Long courseId);
+    List<CourseResponseDto> getCoursesByProfessor(Long id);
 }

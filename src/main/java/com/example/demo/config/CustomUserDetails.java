@@ -30,6 +30,7 @@ public class CustomUserDetails implements UserDetails {
 
     public String getRole(){return user.getRole().name().toUpperCase();}
 
+    public User getUser(){return  user;}
     @Override
     public boolean isEnabled() {
         return user.getStatus() == Status.APPROVED;
@@ -37,5 +38,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override public boolean isAccountNonExpired() { return true; }
     @Override public boolean isAccountNonLocked() { return true; }
-    @Override public boolean isCredentialsNonExpired() { return true; }
+    @Override public boolean isCredentialsNonExpired() {
+        return user.getStatus()==Status.APPROVED; }
 }

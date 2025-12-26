@@ -1,9 +1,8 @@
 package com.example.demo.controller.admin;
 
-import com.example.demo.dto.CourseResponseDto;
-import com.example.demo.dto.UserResponseDto;
+import com.example.demo.dto.course.CourseResponseDto;
+import com.example.demo.dto.user.UserResponseDto;
 import com.example.demo.service.CourseService;
-import com.example.demo.service.EnrollmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
